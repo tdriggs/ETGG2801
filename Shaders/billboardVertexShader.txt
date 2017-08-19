@@ -1,0 +1,28 @@
+#version 150
+
+in vec3 a_position;
+in vec2 a_texcoord;
+in vec3 a_offset;
+in float a_texIndex;
+
+out vec2 v_texcoord;
+out float v_texIndex;
+out vec3 v_worldPos;
+
+uniform mat4 worldMatrix;
+uniform mat4 projMatrix;
+uniform mat4 viewMatrix;
+uniform vec2 bbsize;
+
+void main(){
+    vec4 position = vec4(0, 0, 0, 1.0);
+    position *= worldMatrix;
+    position.xyz += a_offset;
+    v_worldPos = position.xyz;
+    position *= viewMatrix;
+    position.xy += a_position.xy * bbsize;
+    position *= projMatrix;
+    gl_Position = position;
+    v_texcoord = a_texcoord;
+    v_texIndex = a_texIndex;
+}

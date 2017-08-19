@@ -1,0 +1,67 @@
+#version 150
+
+struct Light {
+    vec3 position;
+    vec3 color;
+};
+
+uniform sampler2DArray tex;
+uniform Light light;
+uniform vec3 eyePosition;
+uniform float alphaOffset;
+uniform vec3 fogCenter;
+uniform float fogStart;
+uniform float deltaFog;
+uniform float fogType;
+uniform float fogDensity;
+
+in vec2 v_texcoord;
+in vec3 v_normal;
+in vec3 v_worldPos;
+in float v_texIndex;
+
+out vec4 color;
+
+void main(){
+    color = texture(tex, vec3(v_texcoord, v_texIndex));
+
+    //diffuse
+    vec3 N = normalize(v_normal);
+    vec3 L = normalize(light.position - v_worldPos);
+    float diffuse = dot(N, L);
+    diffuse = max(diffuse, 0.0);
+
+    //specular
+    vec3 R = reflect(-L, N);
+    R = normalize(R);
+    L = normalize(eyePosition - v_worldPos);
+    float specular = dot(R, L);
+    specular = max(specular , 0.0);
+    specular = pow(specular, 32);
+
+    //light
+    color.rgb *= (diffuse + specular) * light.color;
+
+    //alpha
+    color.a = 1 - alphaOffset;
+    if(color.a == 0.0)
+        discard;
+
+    //fog
+    float distance = length(fogCenter - v_worldPos);
+    float fogValue = 1;
+    if(fogType == 0)
+    {
+        fogValue = 1 - ((distance - fogStart) / deltaFog);
+        fogValue = clamp(fogValue, 0.0, 1.0);
+    }
+    else if(fogType == 1)
+    {
+        fogValue = exp(-fogDensity * distance);
+    }
+    else if(fogType == 2)
+    {
+        fogValue = exp(-pow(fogDensity * distance, 2));
+    }
+    color = mix(vec4(0.2, 0.2, 0.2, 1), color, fogValue);
+}

@@ -1,0 +1,40 @@
+#version 150
+
+uniform sampler2DArray tex;
+uniform float fogStart;
+uniform float deltaFog;
+uniform vec3 fogCenter;
+uniform float fogType;
+uniform float fogDensity;
+
+in vec2 v_texcoord;
+in float v_texIndex;
+in vec3 v_worldPos;
+
+out vec4 color;
+
+void main(){
+    color = texture(tex, vec3(v_texcoord, v_texIndex));
+
+    //alpha
+    if(color.a == 0.0)
+        discard;
+
+    //fog
+    float distance = length(fogCenter - v_worldPos);
+    float fogValue = 1;
+    if(fogType == 0)
+    {
+        fogValue = 1 - ((distance - fogStart) / deltaFog);
+        fogValue = clamp(fogValue, 0.0, 1.0);
+    }
+    else if(fogType == 1)
+    {
+        fogValue = exp(-fogDensity * distance);
+    }
+    else if(fogType == 2)
+    {
+        fogValue = exp(-pow(fogDensity * distance, 2));
+    }
+    color = mix(vec4(0.2, 0.2, 0.2, 1), color, fogValue);
+}
